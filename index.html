@@ -16,14 +16,12 @@
       display: none;
     }
 
-    /* Main container for centering */
     .container {
       max-width: 420px;
       margin: 50px auto;
       padding: 20px;
     }
 
-    /* Card style */
     .card {
       background: #ffffff;
       border-radius: 14px;
@@ -62,7 +60,6 @@
       background: #75a7f7;
     }
 
-    /* Reaction Box */
     #reaction-box {
       width: 100%;
       height: 150px;
@@ -72,7 +69,6 @@
       cursor: pointer;
     }
 
-    /* Ranking cards */
     .rank-item {
       background: #d9eaff;
       padding: 12px;
@@ -135,11 +131,12 @@
   </div>
 
 <script>
-  const API_BASE_URL = "https://reflex-server.onrender.com"; // 네 서버 주소
+  const API_BASE_URL = "https://reflex-server.onrender.com"; // 네 서버 주소로 맞추기
 
   let nickname = "";
   let gameStarted = false;
   let greenTime = 0;
+  let lastResult = null; // 방금 게임 결과 저장용
 
   function showScreen(id) {
     document.getElementById("home-screen").classList.add("hidden");
@@ -165,18 +162,29 @@
   function startGame() {
     showScreen("game-screen");
     gameStarted = false;
-    document.getElementById("reaction-box").style.background = "red";
-    document.getElementById("game-message").textContent = "Wait for green...";
+    greenTime = 0;
+    const box = document.getElementById("reaction-box");
+    const msg = document.getElementById("game-message");
 
+    box.style.background = "red";
+    msg.textContent = "Wait for green...";
+
+    const delay = Math.random() * 5000;
     setTimeout(() => {
-      document.getElementById("reaction-box").style.background = "green";
+      box.style.background = "green";
       greenTime = Date.now();
       gameStarted = true;
-    }, Math.random() * 5000);
+      msg.textContent = "Now! Click as fast as you can!";
+    }, delay);
   }
 
   function boxClicked() {
-    if (!greenTime) return;
+    // 아직 초록색이 아닌 상태에서 클릭
+    if (!greenTime) {
+      alert("Too early! Wait for green.");
+      startGame();
+      return;
+    }
 
     if (!gameStarted) {
       alert("Too early! Try again.");
@@ -188,9 +196,7 @@
     finishGame(reaction);
   }
 
-  //---------------------------
-  // 반응속도 멘트 로직
-  //---------------------------
+  // 반응속도 멘트
   function getReactionMessage(ms) {
     if (ms < 20) return "GODLIKE — Impossible reflexes!";
     if (ms < 70) return "Superhuman speed!";
@@ -201,37 +207,32 @@
     return "Snail mode — Were you sleeping?";
   }
 
-  //---------------------------
-  // ⭐ POST → GET 순서로 수정
-  //---------------------------
+  // 게임 종료 → 결과 표시 + 서버 저장 + 랭킹 갱신
   async function finishGame(ms) {
     showScreen("result-screen");
 
-    // 1) 결과 표시
     document.getElementById("result-time").textContent = ms + " ms";
     document.getElementById("result-comment").textContent = getReactionMessage(ms);
 
-    const payload = { nickname, time: ms };
+    lastResult = { nickname, time: ms };
 
-    // 2) 새 기록을 먼저 저장 (POST)
+    // 1) 새 기록을 먼저 저장 (POST)
     try {
       await fetch(`${API_BASE_URL}/ranking`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
+        body: JSON.stringify(lastResult),
       });
     } catch (err) {
       console.error("POST error:", err);
     }
 
-    // 3) 저장 완료 후 최신 랭킹 GET
+    // 2) 저장 완료 후 최신 랭킹 GET + 마지막 기록을 클라이언트에서 강제로 포함
     await loadRanking(true);
   }
 
-  //---------------------------
-  // 최신 랭킹 불러오기
-  //---------------------------
-  async function loadRanking(showTopOnly) {
+  // 랭킹 불러오기 (includeLast가 true면 lastResult를 배열에 합쳐서 정렬)
+  async function loadRanking(includeLast) {
     const area = document.getElementById("ranking-area");
     area.innerHTML = "<div>Loading ranking...</div>";
 
@@ -239,15 +240,33 @@
       const res = await fetch(`${API_BASE_URL}/ranking`);
       const data = await res.json();
 
+      // 안전하게 배열 복사
+      let records = Array.isArray(data) ? [...data] : [];
+
+      // 방금 결과를 클라이언트 측에서 한 번 더 합쳐서 정렬 (즉각 반영 보장)
+      if (includeLast && lastResult) {
+        records.push(lastResult);
+      }
+
+      // 반응속도 오름차순 정렬
+      records.sort((a, b) => a.time - b.time);
+
+      // 상위 5개만 사용
+      const top5 = records.slice(0, 5);
+
       let html = "<div class='title'>Top 5 Ranking</div>";
 
-      data.slice(0, 5).forEach((entry, i) => {
-        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-        html += `
-          <div class="rank-item">
-            ${i + 1}. ${entry.nickname} — ${entry.time} ms ${medal}
-          </div>`;
-      });
+      if (top5.length === 0) {
+        html += "<div>No records yet.</div>";
+      } else {
+        top5.forEach((entry, i) => {
+          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+          html += `
+            <div class="rank-item">
+              ${i + 1}. ${entry.nickname} — ${entry.time} ms ${medal}
+            </div>`;
+        });
+      }
 
       area.innerHTML = html;
 
@@ -259,7 +278,8 @@
 
   function showRanking() {
     showScreen("result-screen");
-    loadRanking(true);
+    // 단순 조회이므로 서버 데이터 그대로 사용 (lastResult는 강제 포함 X)
+    loadRanking(false);
   }
 
   function restartGame() {
@@ -271,4 +291,3 @@
 
 </body>
 </html>
-
