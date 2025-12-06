@@ -239,9 +239,9 @@
       const res = await fetch(`${API_BASE_URL}/ranking`);
       const data = await res.json();
 
-      let html = "<div class='title'>Top 10 Ranking</div>";
+      let html = "<div class='title'>Top 5 Ranking</div>";
 
-      data.slice(0, 10).forEach((entry, i) => {
+      data.slice(0, 5).forEach((entry, i) => {
         const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
         html += `
           <div class="rank-item">
@@ -271,3 +271,4 @@
 
 </body>
 </html>
+
