@@ -1,263 +1,647 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Reflex Tester</title>
-<style>
+  <meta charset="UTF-8" />
+  <title>Reflex Tester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #eef3ff;
+      --card-bg: #f5f8ff;
+      --accent: #2f6bff;
+      --accent-soft: #dbe6ff;
+      --danger: #ff4b5c;
+      --success: #2ecc71;
+      --text-main: #1f2933;
+      --text-sub: #5f6c80;
+      --me-bg: #cfe4ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
     body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f6fa;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at top, #e5edff 0, #eef3ff 40%, #dde6ff 100%);
+      color: var(--text-main);
     }
 
-    .screen {
-        display: none;
-        text-align: center;
-        width: 90%;
-        max-width: 400px;
+    .app {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 16px;
     }
 
-    .box {
-        width: 250px;
-        height: 250px;
-        margin: 20px auto;
-        border-radius: 10px;
-        background-color: #d9534f;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 28px;
-        color: white;
-        cursor: pointer;
-        user-select: none;
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: 0 10px 25px rgba(15, 35, 95, 0.12);
+      padding: 20px 18px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(160, 180, 230, 0.4);
     }
 
-    .green {
-        background-color: #5cb85c !important;
+    .card-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
-    button {
-        padding: 12px 18px;
-        margin: 10px;
-        border-radius: 8px;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        background-color: #0275d8;
-        color: white;
+    .card-subtitle {
+      font-size: 14px;
+      color: var(--text-sub);
     }
 
-    button:hover {
-        opacity: 0.9;
+    .label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #c7d2fe;
+      outline: none;
+      font-size: 14px;
+      margin-bottom: 8px;
+      background: #ffffff;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(47, 107, 255, 0.15);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 6px 12px rgba(47, 107, 255, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 9px 18px rgba(47, 107, 255, 0.45);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid #c7d2fe;
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-soft);
+    }
+
+    .btn-ghost {
+      flex: 0;
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid #c7d2fe;
+      color: var(--text-sub);
+    }
+
+    .btn-ghost:hover {
+      background: #e1e8ff;
+      color: var(--text-main);
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* Game box */
+    #game-box {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      color: #ffffff;
+      transition: background 0.12s ease, transform 0.06s ease;
+    }
+
+    #game-box.waiting {
+      background: #c0392b;
+    }
+
+    #game-box.ready {
+      background: #27ae60;
+    }
+
+    #game-status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    /* Result card */
+    .result-main {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .result-label {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 2px;
+    }
+
+    .result-level {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .result-comment {
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    /* Ranking */
+    .ranking-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
     .ranking-list {
-        text-align: left;
-        margin-top: 20px;
-        font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
     }
-</style>
+
+    .rank-item {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      border: 1px solid #d4ddff;
+      box-shadow: 0 4px 8px rgba(15, 35, 95, 0.08);
+    }
+
+    .rank-item.me {
+      background: var(--me-bg);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(47, 107, 255, 0.4);
+    }
+
+    .rank-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rank-pos {
+      font-weight: 700;
+      color: var(--text-sub);
+      width: 20px;
+      text-align: right;
+    }
+
+    .rank-name {
+      font-weight: 600;
+    }
+
+    .rank-time {
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 72px;
+      text-align: right;
+    }
+
+    .medal {
+      font-size: 16px;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(160, 180, 230, 0.6);
+      margin: 10px 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding: 16px 10px;
+      }
+
+      .card {
+        padding: 18px 14px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <!-- HOME SCREEN -->
+    <section id="home-screen">
+      <div class="card center">
+        <div class="card-title">Reflex Tester</div>
+        <div class="card-subtitle">
+          Click as soon as the box turns green. Compete with your friends on the global ranking.
+        </div>
+      </div>
 
-<!-- HOME SCREEN -->
-<div id="home" class="screen">
-    <h1>Reflex Tester</h1>
-    <input id="nickname-input" type="text" placeholder="Enter nickname" style="padding:8px; width:80%; border-radius:6px;">
-    <br><br>
-    <button id="start-btn">Start Game</button>
-    <button id="ranking-btn">View Ranking</button>
-</div>
+      <div class="card">
+        <div class="label">Nickname</div>
+        <input id="nickname-input" type="text" placeholder="Enter your nickname" />
+        <div class="hint">Your nickname will appear on the ranking board.</div>
+        <div class="btn-row">
+          <button id="start-btn" class="btn btn-primary">Start Game</button>
+          <button id="view-ranking-btn" class="btn btn-secondary">View Ranking</button>
+        </div>
+      </div>
+    </section>
 
-<!-- GAME SCREEN -->
-<div id="game" class="screen">
-    <h2 id="game-status">Wait for green…</h2>
-    <div id="game-box" class="box">Ready</div>
-    <button id="cancel-btn">Home</button>
-</div>
+    <!-- GAME SCREEN -->
+    <section id="game-screen" class="hidden">
+      <div class="card center">
+        <div class="card-title">Get Ready</div>
+        <div class="card-subtitle">
+          Press the box <strong>only after it turns green</strong>. Too early and you start over.
+        </div>
+      </div>
 
-<!-- RESULT SCREEN -->
-<div id="result" class="screen">
-    <h2>Your Reaction Time</h2>
-    <h1 id="result-time">0 ms</h1>
-    <div id="nickname-display"></div>
+      <div class="card">
+        <div id="game-box" class="waiting">
+          Wait for green...
+        </div>
+        <div id="game-status"></div>
+      </div>
 
-    <h3>Top 10 Ranking</h3>
-    <div id="ranking" class="ranking-list"></div>
+      <div class="btn-row" style="justify-content:flex-end;">
+        <button id="back-home-from-game" class="btn btn-ghost">Home</button>
+      </div>
+    </section>
 
-    <button id="retry-btn">Retry</button>
-    <button id="home-btn">Home</button>
-</div>
+    <!-- RESULT SCREEN -->
+    <section id="result-screen" class="hidden">
+      <div class="card center" id="result-card">
+        <div class="result-label">Your Reaction</div>
+        <div id="result-time" class="result-main">0 ms</div>
+        <div id="result-level" class="result-level">Level</div>
+        <div id="result-comment" class="result-comment">
+          Your performance comment will appear here.
+        </div>
+      </div>
 
-<script>
-/* ------------ CONFIG: CHANGE THIS TO YOUR REAL RENDER URL ------------ */
-// 예시: const API = "https://reflex-server-k62t.onrender.com";
-const API = "https://reflex-server-k62t.onrender.com";
+      <div class="card">
+        <div class="ranking-title">Top 10 Ranking</div>
+        <div class="hint" id="ranking-status">Loading...</div>
+        <div class="ranking-list" id="ranking-list"></div>
+      </div>
 
-/* ------------------------ BASIC SETUP ------------------------ */
-const homeScreen = document.getElementById("home");
-const gameScreen = document.getElementById("game");
-const resultScreen = document.getElementById("result");
+      <div class="btn-row">
+        <button id="retry-btn" class="btn btn-primary">Retry</button>
+        <button id="home-from-result-btn" class="btn btn-secondary">Home</button>
+      </div>
+    </section>
+  </div>
 
-function show(screen) {
-    homeScreen.style.display = "none";
-    gameScreen.style.display = "none";
-    resultScreen.style.display = "none";
-    document.getElementById(screen).style.display = "block";
-}
+  <script>
+    // === CONFIG ===
+    const API_BASE_URL = "https://reflex-server-k62t.onrender.com"; // 필요하면 네 서버 URL로 변경
 
-// 초기 화면
-show("home");
+    // === STATE ===
+    let currentNickname = "";
+    let gameStartTimeoutId = null;
+    let greenTime = 0;
+    let lastResult = null; // { nickname, time }
 
-let timer = null;
-let startTime = 0;
-let gameState = "idle";
-let nickname = "";
+    // === ELEMENTS ===
+    const homeScreen = document.getElementById("home-screen");
+    const gameScreen = document.getElementById("game-screen");
+    const resultScreen = document.getElementById("result-screen");
 
-// DOM
-const gameBox = document.getElementById("game-box");
-const gameStatus = document.getElementById("game-status");
+    const nicknameInput = document.getElementById("nickname-input");
+    const startBtn = document.getElementById("start-btn");
+    const viewRankingBtn = document.getElementById("view-ranking-btn");
 
-/* ------------------------ GAME START ------------------------ */
-function startGame() {
-    gameState = "waiting";
-    gameStatus.textContent = "Wait for green…";
-    gameBox.textContent = "Wait…";
-    gameBox.classList.remove("green");
-    gameBox.style.backgroundColor = "#d9534f";
+    const gameBox = document.getElementById("game-box");
+    const gameStatus = document.getElementById("game-status");
+    const backHomeFromGameBtn = document.getElementById("back-home-from-game");
 
-    const delay = Math.random() * 5000; // 0~5000ms 사이 랜덤
+    const resultTimeEl = document.getElementById("result-time");
+    const resultLevelEl = document.getElementById("result-level");
+    const resultCommentEl = document.getElementById("result-comment");
 
-    timer = setTimeout(() => {
-        gameState = "ready";
-        startTime = performance.now();
-        gameBox.classList.add("green");
-        gameBox.textContent = "Tap!";
-        gameStatus.textContent = "Tap now!";
-    }, delay);
-}
+    const rankingStatusEl = document.getElementById("ranking-status");
+    const rankingListEl = document.getElementById("ranking-list");
 
-/* ------------------------ GAME BOX CLICK ------------------------ */
-gameBox.addEventListener("click", () => {
-    if (gameState === "waiting") {
-        // Too early
-        clearTimeout(timer);
-        gameState = "cooldown";
+    const retryBtn = document.getElementById("retry-btn");
+    const homeFromResultBtn = document.getElementById("home-from-result-btn");
 
-        gameBox.textContent = "Too early!";
-        gameStatus.textContent = "Wait for green before tapping.";
-        gameBox.classList.remove("green");
-        gameBox.style.backgroundColor = "#d9534f";
+    // === SCREEN HELPER ===
+    function showScreen(name) {
+      homeScreen.classList.add("hidden");
+      gameScreen.classList.add("hidden");
+      resultScreen.classList.add("hidden");
 
+      if (name === "home") homeScreen.classList.remove("hidden");
+      if (name === "game") gameScreen.classList.remove("hidden");
+      if (name === "result") resultScreen.classList.remove("hidden");
+    }
+
+    // === REACTION LEVEL LOGIC ===
+    function getReactionFeedback(ms) {
+      if (ms < 20) {
+        return {
+          level: "Godlike",
+          comment: "Impossible... Are you even human?"
+        };
+      } else if (ms < 70) {
+        return {
+          level: "Superhuman",
+          comment: "Lightning-fast reflexes!"
+        };
+      } else if (ms < 150) {
+        return {
+          level: "Pro Level",
+          comment: "Professional-grade reaction time."
+        };
+      } else if (ms < 220) {
+        return {
+          level: "Fast",
+          comment: "Above average performance. Nice!"
+        };
+      } else if (ms < 300) {
+        return {
+          level: "Average",
+          comment: "Pretty typical human response."
+        };
+      } else if (ms < 450) {
+        return {
+          level: "Slow",
+          comment: "You can definitely do better."
+        };
+      } else {
+        return {
+          level: "Snail Mode",
+          comment: "Were you sleeping?"
+        };
+      }
+    }
+
+    // === GAME LOGIC ===
+    function resetGameBox() {
+      greenTime = 0;
+      gameBox.classList.remove("ready");
+      gameBox.classList.add("waiting");
+      gameBox.textContent = "Wait for green...";
+      gameStatus.textContent = "";
+    }
+
+    function startGame() {
+      if (gameStartTimeoutId) {
+        clearTimeout(gameStartTimeoutId);
+      }
+
+      resetGameBox();
+      showScreen("game");
+
+      const delay = 1000 + Math.random() * 4000; // 1~5초 사이
+
+      gameStatus.textContent = "Waiting... The box will turn green within 5 seconds.";
+
+      gameStartTimeoutId = setTimeout(() => {
+        greenTime = Date.now();
+        gameBox.classList.remove("waiting");
+        gameBox.classList.add("ready");
+        gameBox.textContent = "CLICK!";
+        gameStatus.textContent = "Now! Tap or click as fast as you can.";
+      }, delay);
+    }
+
+    gameBox.addEventListener("click", () => {
+      // 아직 초록색이 아닌데 눌렀을 때
+      if (!greenTime) {
+        gameStatus.textContent =
+          "Too soon! Wait until the box turns green. Starting over...";
+        gameStatus.style.color = "var(--danger)";
         setTimeout(() => {
-            startGame(); // 1초 뒤 자동 재시작
-        }, 1000);
-
+          gameStatus.style.color = "var(--text-sub)";
+          startGame();
+        }, 900);
         return;
+      }
+
+      // 초록색 이후라면 반응 시간 계산
+      const reaction = Date.now() - greenTime;
+      finishGame(reaction);
+    });
+
+    function finishGame(ms) {
+      clearTimeout(gameStartTimeoutId);
+      gameStartTimeoutId = null;
+
+      const { level, comment } = getReactionFeedback(ms);
+
+      resultTimeEl.textContent = `${ms} ms`;
+      resultLevelEl.textContent = level;
+      resultCommentEl.textContent = comment;
+
+      lastResult = { nickname: currentNickname, time: ms };
+
+      showScreen("result");
+      loadRanking(true); // 방금 결과 기준으로 랭킹 로딩 및 하이라이트
+
+      // 서버에 기록 저장
+      fetch(`${API_BASE_URL}/ranking`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lastResult),
+      }).catch((err) => {
+        console.error("Failed to save ranking:", err);
+      });
     }
 
-    if (gameState === "ready") {
-        const reaction = Math.floor(performance.now() - startTime);
-        finishGame(reaction);
-    }
-});
+    // === RANKING ===
+    async function loadRanking(highlightMe = false) {
+      rankingStatusEl.textContent = "Loading...";
+      rankingListEl.innerHTML = "";
 
-/* ------------------------ FINISH GAME ------------------------ */
-async function finishGame(time) {
-    gameState = "finished";
+      try {
+        const res = await fetch(`${API_BASE_URL}/ranking`);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
 
-    show("result");
-    document.getElementById("result-time").textContent = `${time} ms`;
-    document.getElementById("nickname-display").textContent = `Player: ${nickname}`;
+        rankingStatusEl.textContent = "";
 
-    try {
-        const res = await fetch(`${API}/ranking`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nickname, time })
+        const top10 = data.slice(0, 10);
+        if (top10.length === 0) {
+          rankingStatusEl.textContent = "No records yet. Be the first!";
+          return;
+        }
+
+        top10.forEach((item, idx) => {
+          const div = document.createElement("div");
+          div.className = "rank-item";
+
+          if (
+            highlightMe &&
+            lastResult &&
+            item.nickname === lastResult.nickname &&
+            item.time === lastResult.time
+          ) {
+            div.classList.add("me");
+          }
+
+          const left = document.createElement("div");
+          left.className = "rank-left";
+
+          const pos = document.createElement("div");
+          pos.className = "rank-pos";
+          pos.textContent = idx + 1;
+
+          const name = document.createElement("div");
+          name.className = "rank-name";
+          name.textContent = item.nickname;
+
+          left.appendChild(pos);
+          left.appendChild(name);
+
+          // 메달
+          const rightGroup = document.createElement("div");
+          rightGroup.style.display = "flex";
+          rightGroup.style.alignItems = "center";
+          rightGroup.style.gap = "6px";
+
+          if (idx === 0) {
+            const medal = document.createElement("span");
+            medal.className = "medal";
+            medal.textContent = "🥇";
+            rightGroup.appendChild(medal);
+          } else if (idx === 1) {
+            const medal = document.createElement("span");
+            medal.className = "medal";
+            medal.textContent = "🥈";
+            rightGroup.appendChild(medal);
+          } else if (idx === 2) {
+            const medal = document.createElement("span");
+            medal.className = "medal";
+            medal.textContent = "🥉";
+            rightGroup.appendChild(medal);
+          }
+
+          const time = document.createElement("div");
+          time.className = "rank-time";
+          time.textContent = `${item.time} ms`;
+
+          rightGroup.appendChild(time);
+
+          div.appendChild(left);
+          div.appendChild(rightGroup);
+
+          rankingListEl.appendChild(div);
         });
 
-        const data = await res.json(); // { message, ranking: [...] }
-        renderRanking(data.ranking);
-    } catch (err) {
+        // 하이라이트 되지 않은 경우(홈에서 바로 랭킹만 본 경우)
+        if (!highlightMe && lastResult && !top10.some(
+          (r) => r.nickname === lastResult.nickname && r.time === lastResult.time
+        )) {
+          rankingStatusEl.textContent =
+            `Your latest record: ${lastResult.time} ms (${lastResult.nickname})`;
+        }
+      } catch (err) {
         console.error(err);
-        document.getElementById("ranking").textContent = "Failed to load ranking.";
+        rankingStatusEl.textContent =
+          "Failed to load ranking. Please try again later.";
+      }
     }
-}
 
-/* ------------------------ RENDER RANKING ------------------------ */
-function renderRanking(list) {
-    const rankingDiv = document.getElementById("ranking");
-    rankingDiv.innerHTML = "";
-
-    if (!Array.isArray(list) || list.length === 0) {
-        rankingDiv.textContent = "No records yet.";
+    // === EVENT BINDINGS ===
+    startBtn.addEventListener("click", () => {
+      const nick = nicknameInput.value.trim();
+      if (!nick) {
+        alert("Please enter your nickname first.");
+        nicknameInput.focus();
         return;
-    }
-
-    list.slice(0, 10).forEach((r, i) => {
-        let medal = "";
-        if (i === 0) medal = "🥇 ";
-        else if (i === 1) medal = "🥈 ";
-        else if (i === 2) medal = "🥉 ";
-
-        const line = document.createElement("div");
-        line.textContent = `${medal}${i + 1}. ${r.nickname} - ${r.time} ms`;
-        rankingDiv.appendChild(line);
+      }
+      currentNickname = nick;
+      startGame();
     });
-}
 
-/* ------------------------ BUTTON HANDLERS ------------------------ */
+    viewRankingBtn.addEventListener("click", () => {
+      const nick = nicknameInput.value.trim();
+      // 닉네임이 있어도 없어도 랭킹은 볼 수 있게
+      if (nick) currentNickname = nick;
+      showScreen("result");
+      lastResult = null; // 이번에는 하이라이트 없이 단순 조회
+      loadRanking(false);
+    });
 
-// START GAME
-document.getElementById("start-btn").addEventListener("click", () => {
-    const input = document.getElementById("nickname-input").value.trim();
-    if (!input) {
-        alert("Please enter a nickname.");
-        return;
-    }
-    nickname = input;
-    show("game");
-    startGame();
-});
+    backHomeFromGameBtn.addEventListener("click", () => {
+      if (gameStartTimeoutId) clearTimeout(gameStartTimeoutId);
+      resetGameBox();
+      showScreen("home");
+    });
 
-// VIEW RANKING ONLY
-document.getElementById("ranking-btn").addEventListener("click", async () => {
-    show("result");
-    document.getElementById("result-time").textContent = "";
-    document.getElementById("nickname-display").textContent = "";
-    document.getElementById("ranking").textContent = "Loading...";
+    retryBtn.addEventListener("click", () => {
+      startGame();
+    });
 
-    try {
-        const res = await fetch(`${API}/ranking`);
-        const data = await res.json(); // 서버에서 배열 반환
-        renderRanking(data);
-    } catch (err) {
-        console.error(err);
-        document.getElementById("ranking").textContent = "Failed to load ranking.";
-    }
-});
+    homeFromResultBtn.addEventListener("click", () => {
+      showScreen("home");
+    });
 
-// RETRY
-document.getElementById("retry-btn").addEventListener("click", () => {
-    show("game");
-    startGame();
-});
-
-// HOME BUTTONS
-document.getElementById("home-btn").addEventListener("click", () => {
-    show("home");
-});
-
-document.getElementById("cancel-btn").addEventListener("click", () => {
-    clearTimeout(timer);
-    gameState = "idle";
-    show("home");
-});
-</script>
+    // 초기 화면
+    showScreen("home");
+  </script>
 </body>
 </html>
