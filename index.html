@@ -1,293 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Reflex Tester</title>
-  <style>
+<meta charset="UTF-8" />
+<title>Reflex Tester</title>
+<style>
     body {
-      background-color: #eaf4ff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      text-align: center;
+        font-family: Arial, sans-serif;
+        background-color: #f4f6fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
     }
 
-    .hidden {
-      display: none;
+    .screen {
+        display: none;
+        text-align: center;
+        width: 90%;
+        max-width: 400px;
     }
 
-    .container {
-      max-width: 420px;
-      margin: 50px auto;
-      padding: 20px;
+    .box {
+        width: 250px;
+        height: 250px;
+        margin: 20px auto;
+        border-radius: 10px;
+        background-color: #d9534f;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+        color: white;
+        cursor: pointer;
+        user-select: none;
     }
 
-    .card {
-      background: #ffffff;
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0px 3px 10px rgba(100, 140, 200, 0.25);
+    .green {
+        background-color: #5cb85c !important;
     }
 
-    .title {
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 10px;
+    button {
+        padding: 12px 18px;
+        margin: 10px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #0275d8;
+        color: white;
     }
 
-    input {
-      width: 90%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #8fb8ff;
-      margin-top: 8px;
-      font-size: 16px;
+    button:hover {
+        opacity: 0.9;
     }
 
-    .btn {
-      display: inline-block;
-      background: #8cbcff;
-      padding: 12px 20px;
-      margin: 8px;
-      border-radius: 10px;
-      cursor: pointer;
-      color: white;
-      font-size: 16px;
+    .ranking-list {
+        text-align: left;
+        margin-top: 20px;
+        font-size: 14px;
     }
-
-    .btn:hover {
-      background: #75a7f7;
-    }
-
-    #reaction-box {
-      width: 100%;
-      height: 150px;
-      border-radius: 12px;
-      margin-top: 10px;
-      background: red;
-      cursor: pointer;
-    }
-
-    .rank-item {
-      background: #d9eaff;
-      padding: 12px;
-      border-radius: 12px;
-      margin: 8px 0;
-      box-shadow: 0 2px 6px rgba(140, 170, 220, 0.3);
-      text-align: left;
-      font-size: 17px;
-    }
-
-  </style>
+</style>
 </head>
-
 <body>
 
-  <div class="container">
+<!-- HOME SCREEN -->
+<div id="home" class="screen">
+    <h1>Reflex Tester</h1>
+    <input id="nickname-input" type="text" placeholder="Enter nickname" style="padding:8px; width:80%; border-radius:6px;">
+    <br><br>
+    <button id="start-btn">Start Game</button>
+    <button id="ranking-btn">View Ranking</button>
+</div>
 
-    <!-- HOME SCREEN -->
-    <div id="home-screen" class="card">
-      <div class="title">Reflex Tester</div>
+<!-- GAME SCREEN -->
+<div id="game" class="screen">
+    <h2 id="game-status">Wait for green…</h2>
+    <div id="game-box" class="box">Ready</div>
+    <button id="cancel-btn">Home</button>
+</div>
 
-      <div class="card">
-        <label>Enter Nickname</label><br />
-        <input id="nickname-input" type="text" placeholder="Nickname" />
-      </div>
+<!-- RESULT SCREEN -->
+<div id="result" class="screen">
+    <h2>Your Reaction Time</h2>
+    <h1 id="result-time">0 ms</h1>
+    <div id="nickname-display"></div>
 
-      <div>
-        <div class="btn" onclick="startGameFromHome()">Start Game</div>
-        <div class="btn" onclick="showRanking()">View Ranking</div>
-      </div>
-    </div>
+    <h3>Top 10 Ranking</h3>
+    <div id="ranking" class="ranking-list"></div>
 
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="card hidden">
-      <div class="card">
-        <div id="game-message">Wait for green...</div>
-      </div>
-
-      <div id="reaction-box" onclick="boxClicked()"></div>
-
-      <div class="btn" onclick="returnHome()">Home</div>
-    </div>
-
-    <!-- RESULT SCREEN -->
-    <div id="result-screen" class="hidden">
-
-      <div class="card">
-        <div id="result-time" class="title"></div>
-        <div id="result-comment"></div>
-      </div>
-
-      <div id="ranking-area" class="card"></div>
-
-      <div>
-        <div class="btn" onclick="restartGame()">Retry</div>
-        <div class="btn" onclick="returnHome()">Home</div>
-      </div>
-    </div>
-
-  </div>
+    <button id="retry-btn">Retry</button>
+    <button id="home-btn">Home</button>
+</div>
 
 <script>
-  const API_BASE_URL = "https://reflex-server.onrender.com"; // 네 서버 주소로 맞추기
+/* ------------ CONFIG: CHANGE THIS TO YOUR REAL RENDER URL ------------ */
+// 예시: const API = "https://reflex-server-k62t.onrender.com";
+const API = "https://reflex-server-k62t.onrender.com";
 
-  let nickname = "";
-  let gameStarted = false;
-  let greenTime = 0;
-  let lastResult = null; // 방금 게임 결과 저장용
+/* ------------------------ BASIC SETUP ------------------------ */
+const homeScreen = document.getElementById("home");
+const gameScreen = document.getElementById("game");
+const resultScreen = document.getElementById("result");
 
-  function showScreen(id) {
-    document.getElementById("home-screen").classList.add("hidden");
-    document.getElementById("game-screen").classList.add("hidden");
-    document.getElementById("result-screen").classList.add("hidden");
+function show(screen) {
+    homeScreen.style.display = "none";
+    gameScreen.style.display = "none";
+    resultScreen.style.display = "none";
+    document.getElementById(screen).style.display = "block";
+}
 
-    document.getElementById(id).classList.remove("hidden");
-  }
+// 초기 화면
+show("home");
 
-  function returnHome() {
-    showScreen("home-screen");
-  }
+let timer = null;
+let startTime = 0;
+let gameState = "idle";
+let nickname = "";
 
-  function startGameFromHome() {
-    nickname = document.getElementById("nickname-input").value.trim();
-    if (nickname === "") {
-      alert("Please enter a nickname.");
-      return;
-    }
-    startGame();
-  }
+// DOM
+const gameBox = document.getElementById("game-box");
+const gameStatus = document.getElementById("game-status");
 
-  function startGame() {
-    showScreen("game-screen");
-    gameStarted = false;
-    greenTime = 0;
-    const box = document.getElementById("reaction-box");
-    const msg = document.getElementById("game-message");
+/* ------------------------ GAME START ------------------------ */
+function startGame() {
+    gameState = "waiting";
+    gameStatus.textContent = "Wait for green…";
+    gameBox.textContent = "Wait…";
+    gameBox.classList.remove("green");
+    gameBox.style.backgroundColor = "#d9534f";
 
-    box.style.background = "red";
-    msg.textContent = "Wait for green...";
+    const delay = Math.random() * 5000; // 0~5000ms 사이 랜덤
 
-    const delay = Math.random() * 5000;
-    setTimeout(() => {
-      box.style.background = "green";
-      greenTime = Date.now();
-      gameStarted = true;
-      msg.textContent = "Now! Click as fast as you can!";
+    timer = setTimeout(() => {
+        gameState = "ready";
+        startTime = performance.now();
+        gameBox.classList.add("green");
+        gameBox.textContent = "Tap!";
+        gameStatus.textContent = "Tap now!";
     }, delay);
-  }
+}
 
-  function boxClicked() {
-    // 아직 초록색이 아닌 상태에서 클릭
-    if (!greenTime) {
-      alert("Too early! Wait for green.");
-      startGame();
-      return;
+/* ------------------------ GAME BOX CLICK ------------------------ */
+gameBox.addEventListener("click", () => {
+    if (gameState === "waiting") {
+        // Too early
+        clearTimeout(timer);
+        gameState = "cooldown";
+
+        gameBox.textContent = "Too early!";
+        gameStatus.textContent = "Wait for green before tapping.";
+        gameBox.classList.remove("green");
+        gameBox.style.backgroundColor = "#d9534f";
+
+        setTimeout(() => {
+            startGame(); // 1초 뒤 자동 재시작
+        }, 1000);
+
+        return;
     }
 
-    if (!gameStarted) {
-      alert("Too early! Try again.");
-      startGame();
-      return;
+    if (gameState === "ready") {
+        const reaction = Math.floor(performance.now() - startTime);
+        finishGame(reaction);
     }
+});
 
-    const reaction = Date.now() - greenTime;
-    finishGame(reaction);
-  }
+/* ------------------------ FINISH GAME ------------------------ */
+async function finishGame(time) {
+    gameState = "finished";
 
-  // 반응속도 멘트
-  function getReactionMessage(ms) {
-    if (ms < 20) return "GODLIKE — Impossible reflexes!";
-    if (ms < 70) return "Superhuman speed!";
-    if (ms < 150) return "Pro-level reflex!";
-    if (ms < 220) return "Above average!";
-    if (ms < 300) return "Average human response.";
-    if (ms < 450) return "A bit slow.";
-    return "Snail mode — Were you sleeping?";
-  }
-
-  // 게임 종료 → 결과 표시 + 서버 저장 + 랭킹 갱신
-  async function finishGame(ms) {
-    showScreen("result-screen");
-
-    document.getElementById("result-time").textContent = ms + " ms";
-    document.getElementById("result-comment").textContent = getReactionMessage(ms);
-
-    lastResult = { nickname, time: ms };
-
-    // 1) 새 기록을 먼저 저장 (POST)
-    try {
-      await fetch(`${API_BASE_URL}/ranking`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(lastResult),
-      });
-    } catch (err) {
-      console.error("POST error:", err);
-    }
-
-    // 2) 저장 완료 후 최신 랭킹 GET + 마지막 기록을 클라이언트에서 강제로 포함
-    await loadRanking(true);
-  }
-
-  // 랭킹 불러오기 (includeLast가 true면 lastResult를 배열에 합쳐서 정렬)
-  async function loadRanking(includeLast) {
-    const area = document.getElementById("ranking-area");
-    area.innerHTML = "<div>Loading ranking...</div>";
+    show("result");
+    document.getElementById("result-time").textContent = `${time} ms`;
+    document.getElementById("nickname-display").textContent = `Player: ${nickname}`;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/ranking`);
-      const data = await res.json();
-
-      // 안전하게 배열 복사
-      let records = Array.isArray(data) ? [...data] : [];
-
-      // 방금 결과를 클라이언트 측에서 한 번 더 합쳐서 정렬 (즉각 반영 보장)
-      if (includeLast && lastResult) {
-        records.push(lastResult);
-      }
-
-      // 반응속도 오름차순 정렬
-      records.sort((a, b) => a.time - b.time);
-
-      // 상위 5개만 사용
-      const top5 = records.slice(0, 5);
-
-      let html = "<div class='title'>Top 5 Ranking</div>";
-
-      if (top5.length === 0) {
-        html += "<div>No records yet.</div>";
-      } else {
-        top5.forEach((entry, i) => {
-          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-          html += `
-            <div class="rank-item">
-              ${i + 1}. ${entry.nickname} — ${entry.time} ms ${medal}
-            </div>`;
+        const res = await fetch(`${API}/ranking`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nickname, time })
         });
-      }
 
-      area.innerHTML = html;
-
+        const data = await res.json(); // { message, ranking: [...] }
+        renderRanking(data.ranking);
     } catch (err) {
-      area.innerHTML = "<div>Error loading ranking</div>";
-      console.error(err);
+        console.error(err);
+        document.getElementById("ranking").textContent = "Failed to load ranking.";
     }
-  }
+}
 
-  function showRanking() {
-    showScreen("result-screen");
-    // 단순 조회이므로 서버 데이터 그대로 사용 (lastResult는 강제 포함 X)
-    loadRanking(false);
-  }
+/* ------------------------ RENDER RANKING ------------------------ */
+function renderRanking(list) {
+    const rankingDiv = document.getElementById("ranking");
+    rankingDiv.innerHTML = "";
 
-  function restartGame() {
-    greenTime = 0;
+    if (!Array.isArray(list) || list.length === 0) {
+        rankingDiv.textContent = "No records yet.";
+        return;
+    }
+
+    list.slice(0, 10).forEach((r, i) => {
+        let medal = "";
+        if (i === 0) medal = "🥇 ";
+        else if (i === 1) medal = "🥈 ";
+        else if (i === 2) medal = "🥉 ";
+
+        const line = document.createElement("div");
+        line.textContent = `${medal}${i + 1}. ${r.nickname} - ${r.time} ms`;
+        rankingDiv.appendChild(line);
+    });
+}
+
+/* ------------------------ BUTTON HANDLERS ------------------------ */
+
+// START GAME
+document.getElementById("start-btn").addEventListener("click", () => {
+    const input = document.getElementById("nickname-input").value.trim();
+    if (!input) {
+        alert("Please enter a nickname.");
+        return;
+    }
+    nickname = input;
+    show("game");
     startGame();
-  }
+});
 
+// VIEW RANKING ONLY
+document.getElementById("ranking-btn").addEventListener("click", async () => {
+    show("result");
+    document.getElementById("result-time").textContent = "";
+    document.getElementById("nickname-display").textContent = "";
+    document.getElementById("ranking").textContent = "Loading...";
+
+    try {
+        const res = await fetch(`${API}/ranking`);
+        const data = await res.json(); // 서버에서 배열 반환
+        renderRanking(data);
+    } catch (err) {
+        console.error(err);
+        document.getElementById("ranking").textContent = "Failed to load ranking.";
+    }
+});
+
+// RETRY
+document.getElementById("retry-btn").addEventListener("click", () => {
+    show("game");
+    startGame();
+});
+
+// HOME BUTTONS
+document.getElementById("home-btn").addEventListener("click", () => {
+    show("home");
+});
+
+document.getElementById("cancel-btn").addEventListener("click", () => {
+    clearTimeout(timer);
+    gameState = "idle";
+    show("home");
+});
 </script>
-
 </body>
 </html>
