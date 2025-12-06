@@ -1,37 +1,40 @@
 const express = require("express");
-const app = express();
-const PORT = 3000;
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
+const app = express();
+app.use(cors());
 app.use(express.json());
 
-// 임시 랭킹 저장소 (서버 재시작 시 초기화됨)
-let ranking = [];
+const filePath = path.join(__dirname, "ranking.json");
 
-// 랭킹 조회 (GET)
+// 파일 없으면 생성
+if (!fs.existsSync(filePath)) {
+  fs.writeFileSync(filePath, "[]", "utf8");
+}
+
+// GET 랭킹 조회
 app.get("/ranking", (req, res) => {
-  res.json(ranking);
+  const data = fs.readFileSync(filePath, "utf8");
+  res.send(JSON.parse(data));
 });
 
-// 랭킹 저장 (POST)
+// POST 랭킹 저장
 app.post("/ranking", (req, res) => {
   const { nickname, time } = req.body;
 
-  if (!nickname || time === undefined) {
-    return res.status(400).json({ error: "Missing fields: nickname or time" });
-  }
+  const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  data.push({ nickname, time });
 
-  ranking.push({ nickname, time });
+  data.sort((a, b) => a.time - b.time);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 
-  // 시간 순으로 정렬 (작을수록 상위)
-  ranking.sort((a, b) => a.time - b.time);
-
-  // 상위 10명만 유지
-  ranking = ranking.slice(0, 10);
-
-  res.json({ message: "Saved!", ranking });
+  res.send({ message: "Saved!", ranking: data });
 });
 
-// 서버 시작
+// Render에서 PORT 환경변수 사용
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
