@@ -1,39 +1,54 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const filePath = path.join(__dirname, "ranking.json");
+// ----------------------------------
+// Supabase 클라이언트 생성  ← 추가 위치
+// ----------------------------------
+const { createClient } = require("@supabase/supabase-js");
 
-// 파일 없으면 생성
-if (!fs.existsSync(filePath)) {
-  fs.writeFileSync(filePath, "[]", "utf8");
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+// ----------------------------------
 
-// GET 랭킹 조회
-app.get("/ranking", (req, res) => {
-  const data = fs.readFileSync(filePath, "utf8");
-  res.send(JSON.parse(data));
+// GET: 랭킹 조회 (상위 5명)
+app.get("/ranking", async (req, res) => {
+  const { data, error } = await supabase
+    .from("ranking")
+    .select("*")
+    .order("time", { ascending: true })
+    .limit(5);
+
+  if (error) {
+    console.error(error);
+    return res.status(400).json({ error });
+  }
+
+  res.json(data);
 });
 
-// POST 랭킹 저장
-app.post("/ranking", (req, res) => {
+// POST: 랭킹 저장
+app.post("/ranking", async (req, res) => {
   const { nickname, time } = req.body;
 
-  const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-  data.push({ nickname, time });
+  const { data, error } = await supabase
+    .from("ranking")
+    .insert([{ nickname, time }]);
 
-  data.sort((a, b) => a.time - b.time);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  if (error) {
+    console.error(error);
+    return res.status(400).json({ error });
+  }
 
-  res.send({ message: "Saved!", ranking: data });
+  res.json({ message: "Saved!", data });
 });
 
-// Render에서 PORT 환경변수 사용
+// Render 포트 적용
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
