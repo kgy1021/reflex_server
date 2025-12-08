@@ -173,19 +173,26 @@ async function finishGame(time) {
     document.getElementById("nickname-display").textContent = `Player: ${nickname}`;
 
     try {
-        const res = await fetch(`${API}/ranking`, {
+        // 1) 기록 저장
+        await fetch(`${API}/ranking`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nickname, time })
         });
 
-        const data = await res.json();
-        renderRanking(data.ranking ?? data);
+        // 2) 저장 후 최신 랭킹 다시 요청
+        const res2 = await fetch(`${API}/ranking`);
+        const rankingList = await res2.json();
+
+        // 3) 최신 랭킹 렌더링
+        renderRanking(rankingList);
+
     } catch (err) {
         console.error(err);
         document.getElementById("ranking").textContent = "Failed to load ranking.";
     }
 }
+
 
 /* ------------------------ RENDER RANKING ------------------------ */
 function renderRanking(list) {
